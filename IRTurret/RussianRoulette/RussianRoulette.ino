@@ -89,6 +89,13 @@ int rollPrecision = 158; // this variable represents the time in milliseconds th
 int pitchMax = 175; // this sets the maximum angle of the pitch servo to prevent it from crashing, it should remain below 180, and be greater than the pitchMin
 int pitchMin = 10; // this sets the minimum angle of the pitch servo to prevent it from crashing, it should remain above 0, and be less than the pitchMax
 
+// Variable to store the random number
+int randomNumber;
+int guessedNumbersArray[10];
+
+// Forward declarations
+void shakeHeadYes(int moves = 3);
+void shakeHeadNo(int moves = 3);
 
 //////////////////////////////////////////////////
               //  S E T U P  //
@@ -99,6 +106,11 @@ void setup() {
     yawServo.attach(10); //attach YAW servo to pin 10
     pitchServo.attach(11); //attach PITCH servo to pin 11
     rollServo.attach(12); //attach ROLL servo to pin 12
+
+    // Initialize random seed
+    randomSeed(analogRead(0));
+    // Generate a random number between 0 and 9
+    randomNumber = random(10);
 
     // Just to know which program is running on my microcontroller
     Serial.println(F("START " __FILE__ " from " __DATE__ "\r\nUsing library version " VERSION_IRREMOTE));
@@ -176,11 +188,62 @@ void loop() {
               delay(50);
               break;
 
+            case cmd0:
+              checkValue(0);
+              break;
+            case cmd1:
+              checkValue(1);
+              break;
+            case cmd2:
+              checkValue(2);
+              break;
+            case cmd3:
+              checkValue(3);
+              break;
+            case cmd4:
+              checkValue(4);
+              break;
+            case cmd5:
+              checkValue(5);
+              break;
+            case cmd6:
+              checkValue(6);
+              break;
+            case cmd7:
+              checkValue(7);
+              break;
+            case cmd8:
+              checkValue(8);
+              break;
+            case cmd9:
+              checkValue(9);
+              break;
+
         }
     }
     delay(5);
 }
 
+void checkValue(int value) {
+  if (includes(guessedNumbersArray, 10, value)) {
+    Serial.println("Number is in the array");
+  }
+  if (value == randomNumber) {
+    shakeHeadYes();
+  } else {
+    shakeHeadNo();
+  }
+}
+
+// Function to check if a number is in the array
+bool includes(int array[], int size, int number) {
+    for (int i = 0; i < size; i++) {
+        if (array[i] == number) {
+            return true; // Number found in the array
+        }
+    }
+    return false; // Number not found in the array
+}
 
 void shakeHeadYes(int moves = 3) {
       Serial.println("YES");
