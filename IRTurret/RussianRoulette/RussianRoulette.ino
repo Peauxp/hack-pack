@@ -83,13 +83,16 @@ int pitchMin = 10;   // this sets the minimum angle of the pitch servo to preven
 // Variable to store the random number
 int randomNumber;
 // Array to store previously pressed numbers
-int guessedNumbersArray[10] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+int guessedNumbersArray[9] = { -1, -1, -1, -1, -1, -1, -1, -1, -1 };
 
 // Forward declarations
 void shakeHeadYes(int moves = 3);
 void shakeHeadNo(int moves = 3);
 bool includes(int array[], int size, int number);
 void addGuessedNumber(int number);
+
+// Safety switch
+bool touchOfTheMaster = false;
 
 //////////////////////////////////////////////////
 //  S E T U P  //
@@ -172,14 +175,11 @@ void loop() {
         rightMove(1);
         break;
 
-      case ok:  //firing routine
-        fire();
-        //Serial.println("FIRE");
+      case ok:
         break;
 
-      case star:
-        fireAll();
-        delay(50);
+      case star:  // Flips the safety switch on
+        touchOfTheMaster = true;
         break;
 
       case cmd0:
@@ -220,25 +220,27 @@ void loop() {
 // Fuction to check value against the randomly selected number
 void checkValue(int value) {
   Serial.println("Random value is " + String(randomNumber));
-  if (includes(guessedNumbersArray, 10, value)) {
+  if (includes(guessedNumbersArray, 9, value)) {
     // If you guess a number that was already guessed
     Serial.println("Number is in the array");
     shakeHeadNo();
   } else {
     // If you guess a number that was NOT already guessed
     if (value == randomNumber) {
-      fireAll();
-      delay(50);
-      for (int i = 0; i < 10; i++) {
-        guessedNumbersArray[i] = -1;
+      if (touchOfTheMaster) {
+        asimovFirst(value);
+      } else {
+        fireAll();
+        delay(50);
+        for (int i = 0; i < 10; i++) {
+          guessedNumbersArray[i] = -1;
+        }
+        Serial.println("Array reset");
+        randomNumber = random(10);
+        Serial.println("New Random Number Selected");
       }
-      Serial.println("Array reset");
-      randomNumber = random(10);
-      Serial.println("New Random Number Selected");
     } else {
       addGuessedNumber(value);
-      Serial.println("Number added to the array");
-      shakeHeadYes();
     }
   }
 }
@@ -263,6 +265,31 @@ void addGuessedNumber(int number) {
       break;
     }
   }
+  Serial.println("Number added to the array");
+  shakeHeadYes();
+}
+
+// Function used to reassign the random number so that I don't get shot
+void asimovFirst(int value) {
+  Serial.println("SAFETY SWTICH ACTIVATED");
+  addGuessedNumber(value);
+  if (includes(guessedNumbersArray, 9, -1)) {
+    bool findingUnguessedNumber = true;
+    while (findingUnguessedNumber) {
+      randomNumber = random(10);
+      if (includes(guessedNumbersArray, 9, randomNumber)) {
+        continue;
+      } else {
+        Serial.println("New random number set to " + String(randomNumber));
+        findingUnguessedNumber = false;
+      }
+    }
+  } else {
+    int randomIndex = random(10);
+    randomNumber = guessedNumbersArray[randomIndex];
+    guessedNumbersArray[randomIndex] = -1;
+  }
+  touchOfTheMaster = false;
 }
 
 void shakeHeadYes(int moves = 3) {
